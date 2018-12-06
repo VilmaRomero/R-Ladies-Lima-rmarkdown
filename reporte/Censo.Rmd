@@ -1,0 +1,91 @@
+---
+title: "Censo Nacional de Comisarías 2017"
+subtitle: Análisis de Infraestructura y Equipamiento
+author: "Vilma Romero"
+date: "06/12/2018"
+output:
+  pdf_document:
+    toc: yes
+    toc_depth: 3
+bibliography: taller.bib
+---
+
+# Introducción
+
+Los datos que vamos a analizar provienen del *VI Censo Nacional de Comisarías* realizado en el año 2017 por el [**Instituto Nacional de Estadística e Informática**](https://www.inei.gob.pe). El objetivo primordial de dicho censo fue conocer mejor la infraestructura y equipamiento con el que cuentan los locales donde funcionan las Comisarías de la Policía Nacional del Perú. Entre las principales características a evaluar fueron:
+
+- Ámbito jurisdiccional de la comisaría
+- Número de policías asignados
+- Labor de cada policiía asignado
+- Accesorios de trabajo
+- Planes operativos y de emergencia
+
+Pueden conocer más sobre el ánalisis final de este censo en la publicación oficial del INEI: [**PERÚ: VI CENSO NACIONAL DE COMISARÍAS 2017, Resultados Definitivos**](https://www.inei.gob.pe/media/MenuRecursivo/publicaciones_digitales/Est/Lib1528/index.html).
+
+
+# Análisis Descriptivo
+
+## Lectura de Datos
+
+El archivo con la información descargada del INEI se encuentra en la carpeta datos y tiene por nombre *CensoComisarias.sav*. El formato de este archivo corresponde a bases de datos registradas en el software SPSS, por lo que, se debe importar al R haciendo uso del paquete `foreign`.
+
+```{r}
+# install.packages("foreign") 
+library(foreign) 
+datos <-  read.spss("../datos/CensoComisarias.sav", to.data.frame=TRUE)
+```
+
+Veamos cuanta información tenemos,
+
+```{r}
+dim(datos)
+```
+
+Existen 1495 registros y 280 variables.
+
+Ahora, veamos un pequeño extracto de los datos. 
+
+```{r}
+datos[1:5, 4:6]
+```
+
+```{r}
+knitr::kable(datos[1:5, 4:6])
+```
+
+## Jurisdicción
+
+### Alcance de Jurisdicción
+
+```{r}
+cuadro1 <- as.data.frame(table(datos$INF109))
+cuadro2 <- as.data.frame(prop.table(table(datos$INF109)))
+
+names(cuadro1) <- c("Categoría", "Frecuencia")
+cuadro1$Porcentaje <- cuadro2$Freq
+
+knitr::kable(cuadro1)
+```
+
+```{r,fig.cap="Alcance de Jurisdicción de las Comisarías",fig.height=4,fig.width=6}
+library(ggplot2)
+ggplot(datos, mapping = aes(x = INF109)) +
+  geom_bar() +
+  xlab("Habitantes") + ylab("Frecuencia") +
+  theme(axis.text.x = element_text(angle = 12))
+```
+
+### Tipo de Jurisdicción
+
+```{r}
+knitr::kable(table(datos$INF109A), col.names = c("Categoría", "Frecuencia"))
+```
+
+```{r,fig.cap="Tipo de Jurisdicción de las Comisarías",fig.height=4,fig.width=6}
+library(ggplot2)
+ggplot(datos, mapping = aes(x = INF109A)) +
+  geom_bar(color = "black", fill = "red", alpha = 0.6) +
+  xlab("") + ylab("Frecuencia")
+```
+
+Estos gráficos fueron elaborados con el paquete `ggplot2` desarrollado por @Wickham2009. Además, el reporte fue generado usando `rmarkdown`. Pueden aprender más en el libro de @Xie2018.

@@ -1,0 +1,40 @@
+/* customising title background needs to be via remark-slide due to how default title slides are defined*/
+  .remark-slide {
+    background-image: url("https://emitanaka.github.io/ninja-theme/images/R-LadiesGlobal-transparent.png"), url("../bkg/bg1.png");
+    background-size:  10%, contain;
+    background-position: left top, left top;
+    background-repeat: no-repeat;
+  }
+
+.bg-main6 { background-color: white; color: black}
+.bg-main6 h1 { font-weight: normal; color: #562457;}
+.bg-main6 .remark-code, .remark-inline-code { font-family: 'Inconsolata', 'Lucida Console', Monaco, monospace; color: #696969}
+.bg-main6 a { color: darkblue; }
+
+
+.width70 {
+  width: 70%;
+}
+
+.borderit {
+  border-style: solid;
+  border-width: 4px;
+  border-color: black;
+}
+
+.p-canvas-webgl {
+  position: fixed;
+  z-index: 1;
+  top: 0; left: 0;
+}
+
+.remark-code-line{
+  font-size: 80%;
+}
+
+.pink-code * > .remark-inline-code  {
+  color: #E61771!important;
+}
+
+.content > h4,h5,h6
+{ padding-left: 2%;padding-right: 2%;}

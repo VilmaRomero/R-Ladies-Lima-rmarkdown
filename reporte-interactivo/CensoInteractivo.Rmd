@@ -1,0 +1,185 @@
+---
+title: "Censo Nacional de Comisarías 2017"
+subtitle: "Análisis de Infraestructura y Equipamiento"
+author: "Vilma Romero"
+date: "06/12/2018"
+output:
+  html_document:
+    toc: yes
+    code_folding: show
+---
+
+# Introducción
+
+Los datos que vamos a analizar provienen del *VI Censo Nacional de Comisarías* realizado en el año 2017 por el [**Instituto Nacional de Estadística e Informática**](https://www.inei.gob.pe). El objetivo primordial de dicho censo fue conocer mejor la infraestructura y equipamiento con el que cuentan los locales donde funcionan las Comisarías de la Policía Nacional del Perú. Entre las principales características a evaluar fueron:
+
+- Ámbito jurisdiccional de la comisaría
+- Número de policías asignados
+- Labor de cada policiía asignado
+- Accesorios de trabajo
+- Planes operativos y de emergencia
+
+Pueden conocer más sobre el ánalisis final de este censo en la publicación oficial del INEI: [**PERÚ: VI CENSO NACIONAL DE COMISARÍAS 2017, Resultados Definitivos**](https://www.inei.gob.pe/media/MenuRecursivo/publicaciones_digitales/Est/Lib1528/index.html).
+
+
+# Análisis Descriptivo {.tabset}
+
+## Lectura de Datos
+
+El archivo con la información descargada del INEI se encuentra en la carpeta datos y tiene por nombre *CensoComisarias.sav*. El formato de este archivo corresponde a bases de datos registradas en el software SPSS, por lo que, se debe importar al R haciendo uso del paquete `foreign`.
+
+```{r}
+# install.packages("foreign") 
+library(foreign) 
+datos <-  read.spss("../datos/CensoComisarias.sav", to.data.frame=TRUE)
+```
+
+Veamos cuanta información tenemos,
+
+```{r}
+dim(datos)
+```
+
+Existen 1495 registros y 280 variables.
+
+Ahora, veamos un pequeño extracto de los datos. 
+
+```{r}
+datos[1:5, 4:6]
+```
+
+```{r}
+knitr::kable(datos[1:5, 4:6])
+```
+
+## Jurisdicción {.tabset}
+
+### Alcance de Jurisdicción
+
+```{r}
+cuadro1 <- as.data.frame(table(datos$INF109))
+cuadro2 <- as.data.frame(prop.table(table(datos$INF109)))
+
+names(cuadro1) <- c("Categoría", "Frecuencia")
+cuadro1$Porcentaje <- cuadro2$Freq
+
+knitr::kable(cuadro1)
+```
+
+El siguiente gráfico interactivo es gracias a la función **ggplotly** del paquete `plotly`. Puedes revisar más aquí <https://plot.ly/r/>.
+
+```{r,fig.cap="Alcance de Jurisdicción de las Comisarías",fig.height=4,fig.width=6,warning=FALSE,message=FALSE}
+library(ggplot2)
+graf1 <- ggplot(datos, mapping = aes(x = INF109)) +
+  geom_bar() +
+  xlab("Habitantes") + ylab("Frecuencia") +
+  theme(axis.text.x = element_text(angle = 12))
+
+# Gráfico Interactivo
+library(plotly)
+ggplotly(graf1)
+```
+
+### Tipo de Jurisdicción
+
+```{r}
+knitr::kable(table(datos$INF109A), col.names = c("Categoría", "Frecuencia"))
+```
+
+```{r,fig.cap="Tipo de Jurisdicción de las Comisarías",fig.height=4,fig.width=6}
+library(ggplot2)
+ggplot(datos, mapping = aes(x = INF109A)) +
+  geom_bar(color = "black", fill = "red", alpha = 0.6) +
+  xlab("") + ylab("Frecuencia")
+```
+
+# Locación de las Comisarías {.tabset .tabset-pills}
+
+Las siguientes visualizaciones interactivas han sido posibles gracias al paquete `leaflet`. Si quieres conocer más sobre cómo usar esto en R, te recomiendo revisar [Leaflet para R](https://rstudio.github.io/leaflet/) o la página oficial de la [Librería JavaScript Leaflet](https://leafletjs.com).
+
+## A Nivel Nacional
+
+```{r}
+library(leaflet)
+leaflet() %>% 
+  addTiles() %>% 
+  addMarkers(lng = as.numeric(as.character(datos[,280])),
+             lat = as.numeric(as.character(datos[,279])),
+             clusterOptions = markerClusterOptions())
+```
+
+***
+Este reporte fue elaborado usando `rmarkdown`. Anímate a probarlo!
+
+## Por Jurisdicción
+
+```{r, echo=FALSE,warning=FALSE,message=FALSE}
+# Datos de interés
+tipo <- datos[,c(6,279,280)]
+tipo$GPSLATITUD_INF <- as.numeric(as.character(tipo$GPSLATITUD_INF))
+tipo$GPSLONGITUD_INF <- as.numeric(as.character(tipo$GPSLONGITUD_INF))
+
+library(leaflet)
+# Definición de paleta de colores
+pal <- colorFactor(palette = c("red", "blue", "#9b4a11", "darkgreen", "magenta"), 
+                   levels = c("Nacional", "Regional", "Provincial", "Distrital", "Otros"))
+
+# Elaborando el mapa
+library(dplyr)
+tipo %>% leaflet() %>% 
+  addTiles() %>% 
+  addCircleMarkers(lng = tipo[,3], lat = tipo[,2], radius = 1,
+                   color = ~pal(INF109A)) %>% 
+  addLegend(position = "bottomright",
+            pal = pal, 
+            values = c("Nacional", "Regional", "Provincial", "Distrital", "Otros"))
+```
+
+## Por Alcance de Jurisdicción
+
+```{r, echo=FALSE,warning=FALSE,message=FALSE}
+# Datos de interés
+alcance <- datos[,c(5,279,280)]
+alcance$GPSLATITUD_INF <- as.numeric(as.character(alcance$GPSLATITUD_INF))
+alcance$GPSLONGITUD_INF <- as.numeric(as.character(alcance$GPSLONGITUD_INF))
+
+# Grupos para cada categoría de alcance
+library(dplyr)
+alcance1 <- alcance  %>% filter(INF109 == "Menos de 5000 Hab")
+alcance2 <- alcance  %>% filter(INF109 == "De 5000 - 10000 Hab")
+alcance3 <- alcance  %>% filter(INF109 == "De 10001 - 20000 Hab")
+alcance4 <- alcance  %>% filter(INF109 == "De 20001 - 40000 Hab")
+alcance5 <- alcance  %>% filter(INF109 == "De 40001 - 80000 Hab")
+alcance6 <- alcance  %>% filter(INF109 == "De 80001 a más Hab")
+
+# Elaborando el mapa
+library(leaflet)
+alcance %>% leaflet() %>% 
+  addTiles(group = "OSM") %>% 
+  addProviderTiles("CartoDB", group = "Carto") %>% 
+  addProviderTiles("Esri", group = "Esri")  %>%
+  addCircleMarkers(lng = alcance1[,3], lat = alcance1[,2], radius = 1,
+                   color = "red",
+                   group = "Menos de 5000 Hab") %>% 
+  addCircleMarkers(lng = alcance2[,3], lat = alcance2[,2], radius = 1,
+                   color = "blue",
+                   group = "De 5000 - 10000 Hab") %>%
+  addCircleMarkers(lng = alcance3[,3], lat = alcance3[,2], radius = 1,
+                   color = "green",
+                   group = "De 10001 - 20000 Hab") %>%
+  addCircleMarkers(lng = alcance4[,3], lat = alcance4[,2], radius = 1,
+                   color = "black",
+                   group = "De 20001 - 40000 Hab") %>%
+  addCircleMarkers(lng = alcance5[,3], lat = alcance5[,2], radius = 1,
+                   color = "purple",
+                   group = "De 40001 - 80000 Hab") %>%
+  addCircleMarkers(lng = alcance6[,3], lat = alcance6[,2], radius = 1,
+                   color = "magenta",
+                   group = "De 80001 a más Hab") %>%
+  addLayersControl(
+    overlayGroups = c("Menos de 5000 Hab", "De 5000 - 10000 Hab", "De 10001 - 20000 Hab", 
+                      "De 20001 - 40000 Hab", "De 40001 - 80000 Hab", "De 80001 a más Hab"),
+    baseGroups = c("OSM", "Carto", "Esri"),
+    position = "topleft")
+```
+
